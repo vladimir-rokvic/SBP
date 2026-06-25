@@ -1,0 +1,6 @@
+bin
+fda*
+include
+lib*
+pyvenv.cfg
+.python-version
