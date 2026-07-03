@@ -1,5 +1,16 @@
-SBP upiti - opis query6 - query10, Marko
+SBP upiti - opisi
+query1-query5 Vladimir Rokvic,
+query6 - query10, Marko Djurdjevic
 
+1. Ispisati 10 najvecih kupoprodajnih vlasnika, po broju proizvoda koje prodaju, sortiranih po procentu proizvoda koji sadrze alergente "jaja", "mleko", "riba", "orasasti plodovi" i "psenica".
+
+2. Ispisati detaljne izvestaje o statistici vitamina za najnovije verzije proizvoda svakog vlasnika.
+
+3. Izracunati nutritivni skor za svaku najnoviju verziju proizvoda. Za svakog kupoprodajnog vlasnika izracunati koliko broj i udeo proizvoda kojim raspolaze pripada kojoj kategoriji pritom rangirati po totalnoj vrendosti broja proizvoda i udea proizvoda u svakoj nutritivnoj kategoriji.
+
+4. Izracunati razlike izmedju verzija proizvoda za kalorije, proteine, vlakna, secer i ukupnu gramazu masti i gramazu zasicenih masti. Agregirati prosecnu promenu navedenih vrednosti za svakog kupoprodajnog vlasnika.
+
+5. Pronaci top 10 kupoprodajnih vlasnika koji imaju najmanju vrednost izmedju datuma promena proizvoda i najmanju razliku vremena izmedju promene proizvoda i vremena kada je proizvod postao dostupan.
 
 6. Koja kategorija hrane (branded_food_category) ima najpovoljniji odnos proteina i masti? Za svaku kategoriju izračunati prosečan odnos Protein-G prema Total lipid (fat)-G. Rangirati kategorije silazno po tom odnosu i prikazati top 15 — ovo praktično pokazuje koje kategorije nude najviše proteina uz najmanje masti, što je korisno za procenu nutritivne vrednosti jela po tipu.
 
