@@ -1,0 +1,121 @@
+db.products.createIndex({ branded_food_category: 1, "Energy-KCAL": 1 })
+
+[
+  {
+    $match: {
+      branded_food_category: {
+        $exists: true,
+        $ne: null
+      }
+    }
+  },
+  {
+    $facet: {
+      maximumi: [
+        {
+          $group: {
+            _id: null,
+            max_iron: { $max: "$Iron, Fe-MG" },
+            max_calcium: {
+              $max: "$Calcium, Ca-MG"
+            },
+            max_potassium: {
+              $max: "$Potassium, K-MG"
+            },
+            max_vitaminC: {
+              $max: "$Vitamin C, total ascorbic acid-MG"
+            },
+            max_fiber: {
+              $max: "$Fiber, total dietary-G"
+            }
+          }
+        }
+      ],
+      skorovi: [
+        {
+          $match: { "Energy-KCAL": { $gt: 0 } }
+        },
+        {
+          $project: {
+            branded_food_category: 1,
+            energy: "$Energy-KCAL",
+            norm_iron: {
+              $divide: [
+                {
+                  $divide: [
+                    "$Iron, Fe-MG",
+                    "$Energy-KCAL"
+                  ]
+                },
+                18.0
+              ]
+            },
+            norm_calcium: {
+              $divide: [
+                {
+                  $divide: [
+                    "$Calcium, Ca-MG",
+                    "$Energy-KCAL"
+                  ]
+                },
+                30.0
+              ]
+            },
+            norm_potassium: {
+              $divide: [
+                {
+                  $divide: [
+                    "$Potassium, K-MG",
+                    "$Energy-KCAL"
+                  ]
+                },
+                70.0
+              ]
+            },
+            norm_vitaminC: {
+              $divide: [
+                {
+                  $divide: [
+                    "$Vitamin C, total ascorbic acid-MG",
+                    "$Energy-KCAL"
+                  ]
+                },
+                10.0
+              ]
+            },
+            norm_fiber: {
+              $divide: [
+                {
+                  $divide: [
+                    "$Fiber, total dietary-G",
+                    "$Energy-KCAL"
+                  ]
+                },
+                2.5
+              ]
+            }
+          }
+        },
+        {
+          $group: {
+            _id: "$branded_food_category",
+            avg_energy: { $avg: "$energy" },
+            avg_score: {
+              $avg: {
+                $add: [
+                  "$norm_iron",
+                  "$norm_calcium",
+                  "$norm_potassium",
+                  "$norm_vitaminC",
+                  "$norm_fiber"
+                ]
+              }
+            }
+          }
+        },
+        { $sort: { avg_score: -1 } },
+        { $limit: 20 }
+      ]
+    }
+  }
+]

@@ -1,0 +1,36 @@
+[
+  {
+    $group: {
+      _id: "$branded_food_category",
+      avg_protein: { $avg: "$Protein-G" },
+      avg_fat: { $avg: "$Total lipid (fat)-G" }
+    }
+  },
+  {
+    $project: {
+      category: "$_id",
+      avg_protein: 1,
+      avg_fat: 1,
+      protein_fat_ratio: {
+        $cond: [
+          { $gt: ["$avg_fat", 0] },
+          {
+            $divide: ["$avg_protein", "$avg_fat"]
+          },
+          null
+        ]
+      }
+    }
+  },
+  {
+    $match: {
+      protein_fat_ratio: { $ne: null }
+    }
+  },
+  {
+    $sort: { protein_fat_ratio: -1 }
+  },
+  {
+    $limit: 15
+  }
+]

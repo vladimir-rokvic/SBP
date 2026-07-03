@@ -1,0 +1,348 @@
+db.products.createIndex({ branded_food_category: 1, "Carbohydrate, by difference-G": 1 })
+
+[
+  {
+    $match: {
+      branded_food_category: {
+        $exists: true,
+        $ne: null
+      },
+      "Carbohydrate, by difference-G": { $gt: 0 },
+      "Energy-KCAL": { $gt: 0 }
+    }
+  },
+  {
+    $project: {
+      _id: 0,
+      branded_food_category: 1,
+      description: 1,
+      fiber: "$Fiber, total dietary-G",
+      carbs: "$Carbohydrate, by difference-G",
+      energy: "$Energy-KCAL",
+      calcium: "$Calcium, Ca-MG",
+      iron: "$Iron, Fe-MG",
+      net_carbs: {
+        $subtract: [
+          "$Carbohydrate, by difference-G",
+          "$Fiber, total dietary-G"
+        ]
+      },
+      fiber_share_in_carbs: {
+        $multiply: [
+          {
+            $divide: [
+              "$Fiber, total dietary-G",
+              "$Carbohydrate, by difference-G"
+            ]
+          },
+          100
+        ]
+      },
+      fiber_per_100kcal: {
+        $multiply: [
+          {
+            $divide: [
+              "$Fiber, total dietary-G",
+              "$Energy-KCAL"
+            ]
+          },
+          100
+        ]
+      },
+      fiber_per_serving: {
+        $cond: [
+          { $gt: ["$serving_size", 0] },
+          {
+            $multiply: [
+              {
+                $divide: [
+                  "$Fiber, total dietary-G",
+                  100
+                ]
+              },
+              "$serving_size"
+            ]
+          },
+          0
+        ]
+      },
+      sugar_to_fiber_ratio: {
+        $cond: [
+          { $gt: ["$Fiber, total dietary-G", 0] },
+          {
+            $divide: [
+              "$Sugars, total including NLEA-G",
+              "$Fiber, total dietary-G"
+            ]
+          },
+          null
+        ]
+      },
+      sugar_to_fiber_sort_key: {
+        $cond: [
+          { $gt: ["$Fiber, total dietary-G", 0] },
+          {
+            $divide: [
+              "$Sugars, total including NLEA-G",
+              "$Fiber, total dietary-G"
+            ]
+          },
+          999999999
+        ]
+      },
+      is_high_fiber: {
+        $gte: ["$Fiber, total dietary-G", 5]
+      },
+      is_low_fiber: {
+        $lt: ["$Fiber, total dietary-G", 0.5]
+      },
+      is_high_sugar: {
+        $gte: [
+          "$Sugars, total including NLEA-G",
+          10
+        ]
+      }
+    }
+  },
+  {
+    $group: {
+      _id: "$branded_food_category",
+      avg_fiber: { $avg: "$fiber" },
+      avg_carbs: { $avg: "$carbs" },
+      avg_energy: { $avg: "$energy" },
+      avg_net_carbs: { $avg: "$net_carbs" },
+      avg_fiber_per_100kcal: {
+        $avg: "$fiber_per_100kcal"
+      },
+      avg_fiber_share_in_carbs: {
+        $avg: "$fiber_share_in_carbs"
+      },
+      avg_fiber_per_serving: {
+        $avg: "$fiber_per_serving"
+      },
+      avg_sugar_to_fiber: {
+        $avg: "$sugar_to_fiber_ratio"
+      },
+      avg_calcium: { $avg: "$calcium" },
+      avg_iron: { $avg: "$iron" },
+      total_products: { $sum: 1 },
+      high_fiber_count: {
+        $sum: { $cond: ["$is_high_fiber", 1, 0] }
+      },
+      low_fiber_count: {
+        $sum: { $cond: ["$is_low_fiber", 1, 0] }
+      },
+      high_sugar_count: {
+        $sum: { $cond: ["$is_high_sugar", 1, 0] }
+      },
+      max_fiber_product: {
+        $top: {
+          sortBy: { fiber: -1 },
+          output: {
+            description: "$description",
+            fiber: "$fiber"
+          }
+        }
+      },
+      max_fiber_share_product: {
+        $top: {
+          sortBy: { fiber_share_in_carbs: -1 },
+          output: {
+            description: "$description",
+            fiber_share_in_carbs:
+              "$fiber_share_in_carbs"
+          }
+        }
+      },
+      max_fiber_per_serving_product: {
+        $top: {
+          sortBy: { fiber_per_serving: -1 },
+          output: {
+            description: "$description",
+            fiber_per_serving:
+              "$fiber_per_serving"
+          }
+        }
+      },
+      best_sugar_fiber_product: {
+        $top: {
+          sortBy: { sugar_to_fiber_sort_key: 1 },
+          output: {
+            description: "$description",
+            sugar_to_fiber_ratio:
+              "$sugar_to_fiber_ratio"
+          }
+        }
+      }
+    }
+  },
+  {
+    $project: {
+      _id: 0,
+      category: "$_id",
+      total_products: 1,
+      avg_fiber: { $round: ["$avg_fiber", 3] },
+      avg_carbs: { $round: ["$avg_carbs", 3] },
+      avg_energy: { $round: ["$avg_energy", 2] },
+      avg_net_carbs: {
+        $round: ["$avg_net_carbs", 3]
+      },
+      avg_fiber_per_100kcal: {
+        $round: ["$avg_fiber_per_100kcal", 3]
+      },
+      avg_fiber_share_in_carbs: {
+        $round: ["$avg_fiber_share_in_carbs", 2]
+      },
+      avg_fiber_per_serving: {
+        $round: ["$avg_fiber_per_serving", 3]
+      },
+      avg_sugar_to_fiber: {
+        $round: ["$avg_sugar_to_fiber", 3]
+      },
+      avg_calcium: {
+        $round: ["$avg_calcium", 2]
+      },
+      avg_iron: { $round: ["$avg_iron", 3] },
+      high_fiber_pct: {
+        $round: [
+          {
+            $multiply: [
+              {
+                $divide: [
+                  "$high_fiber_count",
+                  "$total_products"
+                ]
+              },
+              100
+            ]
+          },
+          1
+        ]
+      },
+      low_fiber_pct: {
+        $round: [
+          {
+            $multiply: [
+              {
+                $divide: [
+                  "$low_fiber_count",
+                  "$total_products"
+                ]
+              },
+              100
+            ]
+          },
+          1
+        ]
+      },
+      high_sugar_pct: {
+        $round: [
+          {
+            $multiply: [
+              {
+                $divide: [
+                  "$high_sugar_count",
+                  "$total_products"
+                ]
+              },
+              100
+            ]
+          },
+          1
+        ]
+      },
+      processing_flag: {
+        $switch: {
+          branches: [
+            {
+              case: { $lt: ["$avg_fiber", 0.5] },
+              then: "visoko preradjeno"
+            },
+            {
+              case: {
+                $and: [
+                  { $gte: ["$avg_fiber", 0.5] },
+                  { $lt: ["$avg_fiber", 2.0] }
+                ]
+              },
+              then: "umereno preradjeno"
+            },
+            {
+              case: {
+                $and: [
+                  { $gte: ["$avg_fiber", 2.0] },
+                  { $lt: ["$avg_fiber", 5.0] }
+                ]
+              },
+              then: "minimalno preradjeno"
+            }
+          ],
+          default: "bogato vlaknima"
+        }
+      },
+      fiber_quality_score: {
+        $round: [
+          {
+            $add: [
+              {
+                $multiply: [
+                  "$avg_fiber_per_100kcal",
+                  2
+                ]
+              },
+              {
+                $multiply: [
+                  "$avg_fiber_share_in_carbs",
+                  0.1
+                ]
+              },
+              {
+                $cond: [
+                  {
+                    $gt: [
+                      "$avg_sugar_to_fiber",
+                      0
+                    ]
+                  },
+                  {
+                    $multiply: [
+                      {
+                        $divide: [
+                          1,
+                          "$avg_sugar_to_fiber"
+                        ]
+                      },
+                      5
+                    ]
+                  },
+                  0
+                ]
+              }
+            ]
+          },
+          3
+        ]
+      },
+      max_fiber_product: 1,
+      max_fiber_share_product: 1,
+      max_fiber_per_serving_product: 1,
+      best_sugar_fiber_product: {
+        description:
+          "$best_sugar_fiber_product.description",
+        sugar_to_fiber_ratio: {
+          $cond: [
+            {
+              $eq: [
+                "$best_sugar_fiber_product.sugar_to_fiber_ratio",
+                null
+              ]
+            },
+            null,
+            "$best_sugar_fiber_product.sugar_to_fiber_ratio"
+          ]
+        }
+      }
+    }
+  },
+  { $sort: { avg_fiber: -1 } }
+]
