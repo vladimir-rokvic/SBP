@@ -1,0 +1,462 @@
+from pymongo import MongoClient
+import json
+
+client = MongoClient("mongodb://localhost:27017/")
+db = client["projectdb"]
+collection = db["products"]
+
+pipeline = [
+    {
+        "$match": {
+            "branded_food_category": {"$exists": True, "$ne": None},
+            "Energy-KCAL": {"$exists": True, "$ne": None},
+            "Iron, Fe-MG": {"$exists": True, "$ne": None},
+            "Calcium, Ca-MG": {"$exists": True, "$ne": None},
+            "Potassium, K-MG": {"$exists": True, "$ne": None},
+            "Vitamin C, total ascorbic acid-MG": {"$exists": True, "$ne": None},
+            "Fiber, total dietary-G": {"$exists": True, "$ne": None}
+        }
+    },
+    {
+        "$project": {
+            "_id": 0,
+            "branded_food_category": 1,
+            "description": 1,
+            "energy": {"$toDouble": "$Energy-KCAL"},
+            "iron": {"$toDouble": "$Iron, Fe-MG"},
+            "calcium": {"$toDouble": "$Calcium, Ca-MG"},
+            "potassium": {"$toDouble": "$Potassium, K-MG"},
+            "vitaminC": {"$toDouble": "$Vitamin C, total ascorbic acid-MG"},
+            "fiber": {"$toDouble": "$Fiber, total dietary-G"},
+            "protein": {"$toDouble": "$Protein-G"},
+            "fat": {"$toDouble": "$Total lipid (fat)-G"},
+            "carbs": {"$toDouble": "$Carbohydrate, by difference-G"},
+            "sodium": {"$toDouble": "$Sodium, Na-MG"},
+            "sugar": {"$toDouble": "$Sugars, total including NLEA-G"},
+            "saturated": {"$toDouble": "$Fatty acids, total saturated-G"},
+            "vitaminA": {"$toDouble": "$Vitamin A, IU-IU"},
+            "vitaminD": {"$toDouble": "$Vitamin D (D2 + D3)-UG"},
+            "magnesium": {"$toDouble": "$Magnesium, Mg-MG"},
+            "zinc": {"$toDouble": "$Zinc, Zn-MG"},
+            "serving_size": {"$toDouble": "$serving_size"}
+        }
+    },
+    {
+        "$match": {
+            "energy": {"$gt": 0},
+            "serving_size": {"$gt": 0}
+        }
+    },
+    {
+        "$project": {
+            "branded_food_category": 1,
+            "description": 1,
+            "energy": 1,
+            "iron": 1,
+            "calcium": 1,
+            "potassium": 1,
+            "vitaminC": 1,
+            "fiber": 1,
+            "protein": 1,
+            "fat": 1,
+            "carbs": 1,
+            "sodium": 1,
+            "sugar": 1,
+            "saturated": 1,
+            "vitaminA": 1,
+            "vitaminD": 1,
+            "magnesium": 1,
+            "zinc": 1,
+            "serving_size": 1,
+            "norm_iron": {"$divide": [{"$divide": ["$iron", "$energy"]}, 18.0]},
+            "norm_calcium": {"$divide": [{"$divide": ["$calcium", "$energy"]}, 30.0]},
+            "norm_potassium": {"$divide": [{"$divide": ["$potassium", "$energy"]}, 70.0]},
+            "norm_vitaminC": {"$divide": [{"$divide": ["$vitaminC", "$energy"]}, 10.0]},
+            "norm_fiber": {"$divide": [{"$divide": ["$fiber", "$energy"]}, 2.5]},
+            "norm_magnesium": {"$divide": [{"$divide": ["$magnesium", "$energy"]}, 4.2]},
+            "norm_zinc": {"$divide": [{"$divide": ["$zinc", "$energy"]}, 0.11]},
+            "norm_vitaminA": {"$divide": [{"$divide": ["$vitaminA", "$energy"]}, 90.0]},
+            "norm_vitaminD": {"$divide": [{"$divide": ["$vitaminD", "$energy"]}, 0.2]},
+            "penalty_sodium": {
+                "$cond": [
+                    {"$gt": ["$sodium", 0]},
+                    {"$divide": [{"$divide": ["$sodium", "$energy"]}, 23.0]},
+                    0
+                ]
+            },
+            "penalty_sugar": {
+                "$cond": [
+                    {"$gt": ["$sugar", 0]},
+                    {"$divide": [{"$divide": ["$sugar", "$energy"]}, 5.0]},
+                    0
+                ]
+            },
+            "penalty_saturated": {
+                "$cond": [
+                    {"$gt": ["$saturated", 0]},
+                    {"$divide": [{"$divide": ["$saturated", "$energy"]}, 2.2]},
+                    0
+                ]
+            },
+            "protein_per_100kcal": {"$multiply": [{"$divide": ["$protein", "$energy"]}, 100]},
+            "fat_per_100kcal": {"$multiply": [{"$divide": ["$fat", "$energy"]}, 100]},
+            "fiber_per_100kcal": {"$multiply": [{"$divide": ["$fiber", "$energy"]}, 100]},
+            "sodium_per_serving": {"$multiply": [{"$divide": ["$sodium", 100]}, "$serving_size"]},
+            "iron_per_serving": {"$multiply": [{"$divide": ["$iron", 100]}, "$serving_size"]},
+            "calcium_per_serving": {"$multiply": [{"$divide": ["$calcium", 100]}, "$serving_size"]},
+            "is_micronutrient_rich": {
+                "$cond": [
+                    {
+                        "$and": [
+                            {"$gte": ["$iron", 2]},
+                            {"$gte": ["$calcium", 100]},
+                            {"$gte": ["$potassium", 200]}
+                        ]
+                    },
+                    True,
+                    False
+                ]
+            },
+            "is_penalized": {
+                "$cond": [
+                    {
+                        "$or": [
+                            {
+                                "$gt": [
+                                    {"$multiply": [{"$divide": ["$sodium", 100]}, "$serving_size"]},
+                                    600
+                                ]
+                            },
+                            {"$gt": ["$sugar", 15]},
+                            {"$gt": ["$saturated", 8]}
+                        ]
+                    },
+                    True,
+                    False
+                ]
+            }
+        }
+    },
+    {
+        "$project": {
+            "branded_food_category": 1,
+            "description": 1,
+            "energy": 1,
+            "iron": 1,
+            "calcium": 1,
+            "potassium": 1,
+            "vitaminC": 1,
+            "fiber": 1,
+            "protein": 1,
+            "sodium": 1,
+            "sugar": 1,
+            "vitaminA": 1,
+            "vitaminD": 1,
+            "magnesium": 1,
+            "zinc": 1,
+            "serving_size": 1,
+            "protein_per_100kcal": 1,
+            "fat_per_100kcal": 1,
+            "fiber_per_100kcal": 1,
+            "sodium_per_serving": 1,
+            "iron_per_serving": 1,
+            "calcium_per_serving": 1,
+            "is_micronutrient_rich": 1,
+            "is_penalized": 1,
+            "base_score": {
+                "$add": [
+                    "$norm_iron",
+                    "$norm_calcium",
+                    "$norm_potassium",
+                    "$norm_vitaminC",
+                    "$norm_fiber",
+                    "$norm_magnesium",
+                    "$norm_zinc",
+                    "$norm_vitaminA",
+                    "$norm_vitaminD"
+                ]
+            },
+            "total_penalty": {
+                "$add": ["$penalty_sodium", "$penalty_sugar", "$penalty_saturated"]
+            },
+            "net_score": {
+                "$subtract": [
+                    {
+                        "$add": [
+                            "$norm_iron",
+                            "$norm_calcium",
+                            "$norm_potassium",
+                            "$norm_vitaminC",
+                            "$norm_fiber",
+                            "$norm_magnesium",
+                            "$norm_zinc",
+                            "$norm_vitaminA",
+                            "$norm_vitaminD"
+                        ]
+                    },
+                    {"$add": ["$penalty_sodium", "$penalty_sugar", "$penalty_saturated"]}
+                ]
+            }
+        }
+    },
+    {
+        "$group": {
+            "_id": "$branded_food_category",
+            "avg_energy": {"$avg": "$energy"},
+            "avg_protein": {"$avg": "$protein"},
+            "avg_fiber": {"$avg": "$fiber"},
+            "avg_sodium": {"$avg": "$sodium"},
+            "avg_sugar": {"$avg": "$sugar"},
+            "avg_iron": {"$avg": "$iron"},
+            "avg_calcium": {"$avg": "$calcium"},
+            "avg_potassium": {"$avg": "$potassium"},
+            "avg_vitaminC": {"$avg": "$vitaminC"},
+            "avg_vitaminA": {"$avg": "$vitaminA"},
+            "avg_vitaminD": {"$avg": "$vitaminD"},
+            "avg_magnesium": {"$avg": "$magnesium"},
+            "avg_zinc": {"$avg": "$zinc"},
+            "avg_protein_per_100kcal": {"$avg": "$protein_per_100kcal"},
+            "avg_fat_per_100kcal": {"$avg": "$fat_per_100kcal"},
+            "avg_fiber_per_100kcal": {"$avg": "$fiber_per_100kcal"},
+            "avg_sodium_per_serving": {"$avg": "$sodium_per_serving"},
+            "avg_iron_per_serving": {"$avg": "$iron_per_serving"},
+            "avg_calcium_per_serving": {"$avg": "$calcium_per_serving"},
+            "avg_base_score": {"$avg": "$base_score"},
+            "avg_total_penalty": {"$avg": "$total_penalty"},
+            "avg_net_score": {"$avg": "$net_score"},
+            "max_net_score": {"$max": "$net_score"},
+            "min_net_score": {"$min": "$net_score"},
+            "total_products": {"$sum": 1},
+            "micronutrient_rich_count": {"$sum": {"$cond": ["$is_micronutrient_rich", 1, 0]}},
+            "penalized_count": {"$sum": {"$cond": ["$is_penalized", 1, 0]}},
+            "products": {
+                "$push": {
+                    "description": "$description",
+                    "net_score": "$net_score",
+                    "base_score": "$base_score",
+                    "total_penalty": "$total_penalty",
+                    "protein_per_100kcal": "$protein_per_100kcal",
+                    "fiber_per_100kcal": "$fiber_per_100kcal",
+                    "sodium_per_serving": "$sodium_per_serving",
+                    "iron_per_serving": "$iron_per_serving",
+                    "calcium_per_serving": "$calcium_per_serving"
+                }
+            }
+        }
+    },
+    {
+        "$project": {
+            "_id": 0,
+            "category": "$_id",
+            "total_products": 1,
+            "avg_energy": {"$round": ["$avg_energy", 2]},
+            "avg_protein": {"$round": ["$avg_protein", 2]},
+            "avg_fiber": {"$round": ["$avg_fiber", 3]},
+            "avg_sodium": {"$round": ["$avg_sodium", 2]},
+            "avg_sugar": {"$round": ["$avg_sugar", 2]},
+            "avg_iron": {"$round": ["$avg_iron", 3]},
+            "avg_calcium": {"$round": ["$avg_calcium", 2]},
+            "avg_potassium": {"$round": ["$avg_potassium", 2]},
+            "avg_vitaminC": {"$round": ["$avg_vitaminC", 2]},
+            "avg_vitaminA": {"$round": ["$avg_vitaminA", 2]},
+            "avg_vitaminD": {"$round": ["$avg_vitaminD", 3]},
+            "avg_magnesium": {"$round": ["$avg_magnesium", 2]},
+            "avg_zinc": {"$round": ["$avg_zinc", 3]},
+            "avg_protein_per_100kcal": {"$round": ["$avg_protein_per_100kcal", 3]},
+            "avg_fat_per_100kcal": {"$round": ["$avg_fat_per_100kcal", 3]},
+            "avg_fiber_per_100kcal": {"$round": ["$avg_fiber_per_100kcal", 3]},
+            "avg_sodium_per_serving": {"$round": ["$avg_sodium_per_serving", 2]},
+            "avg_iron_per_serving": {"$round": ["$avg_iron_per_serving", 3]},
+            "avg_calcium_per_serving": {"$round": ["$avg_calcium_per_serving", 2]},
+            "avg_base_score": {"$round": ["$avg_base_score", 4]},
+            "avg_total_penalty": {"$round": ["$avg_total_penalty", 4]},
+            "avg_net_score": {"$round": ["$avg_net_score", 4]},
+            "max_net_score": {"$round": ["$max_net_score", 4]},
+            "min_net_score": {"$round": ["$min_net_score", 4]},
+            "score_range": {
+                "$round": [{"$subtract": ["$max_net_score", "$min_net_score"]}, 4]
+            },
+            "micronutrient_rich_pct": {
+                "$round": [
+                    {"$multiply": [{"$divide": ["$micronutrient_rich_count", "$total_products"]}, 100]},
+                    1
+                ]
+            },
+            "penalized_pct": {
+                "$round": [
+                    {"$multiply": [{"$divide": ["$penalized_count", "$total_products"]}, 100]},
+                    1
+                ]
+            },
+            "nutritional_efficiency": {
+                "$round": [
+                    {
+                        "$cond": [
+                            {"$gt": ["$avg_total_penalty", 0]},
+                            {"$divide": ["$avg_base_score", "$avg_total_penalty"]},
+                            "$avg_base_score"
+                        ]
+                    },
+                    4
+                ]
+            },
+            "nutrient_density_grade": {
+                "$switch": {
+                    "branches": [
+                        {
+                            "case": {
+                                "$and": [
+                                    {"$gte": ["$avg_net_score", 0.5]},
+                                    {"$lte": ["$avg_total_penalty", 0.3]},
+                                    {"$gte": ["$avg_fiber_per_100kcal", 2.0]}
+                                ]
+                            },
+                            "then": "A"
+                        },
+                        {
+                            "case": {
+                                "$and": [
+                                    {"$gte": ["$avg_net_score", 0.3]},
+                                    {"$lte": ["$avg_total_penalty", 0.6]}
+                                ]
+                            },
+                            "then": "B"
+                        },
+                        {
+                            "case": {
+                                "$and": [
+                                    {"$gte": ["$avg_net_score", 0.1]},
+                                    {"$lte": ["$avg_total_penalty", 1.0]}
+                                ]
+                            },
+                            "then": "C"
+                        },
+                        {
+                            "case": {"$gte": ["$avg_net_score", 0]},
+                            "then": "D"
+                        }
+                    ],
+                    "default": "F"
+                }
+            },
+            "overall_health_rating": {
+                "$switch": {
+                    "branches": [
+                        {
+                            "case": {
+                                "$and": [
+                                    {"$gte": ["$avg_net_score", 0.4]},
+                                    {"$gte": ["$avg_protein_per_100kcal", 5]},
+                                    {"$lte": ["$avg_sodium_per_serving", 300]},
+                                    {
+                                        "$gte": [
+                                            "$micronutrient_rich_count",
+                                            {"$multiply": ["$total_products", 0.3]}
+                                        ]
+                                    }
+                                ]
+                            },
+                            "then": "odlican"
+                        },
+                        {
+                            "case": {
+                                "$and": [
+                                    {"$gte": ["$avg_net_score", 0.2]},
+                                    {"$lte": ["$avg_sodium_per_serving", 600]}
+                                ]
+                            },
+                            "then": "dobar"
+                        },
+                        {
+                            "case": {
+                                "$or": [
+                                    {"$gte": ["$avg_net_score", 0.0]},
+                                    {"$lte": ["$avg_sodium_per_serving", 1000]}
+                                ]
+                            },
+                            "then": "prosecan"
+                        },
+                        {
+                            "case": {"$lt": ["$avg_net_score", 0]},
+                            "then": "los"
+                        }
+                    ],
+                    "default": "nedovoljno podataka"
+                }
+            },
+            "best_product": {
+                "$reduce": {
+                    "input": "$products",
+                    "initialValue": {"description": "", "net_score": -999},
+                    "in": {
+                        "$cond": [
+                            {"$gt": ["$$this.net_score", "$$value.net_score"]},
+                            "$$this",
+                            "$$value"
+                        ]
+                    }
+                }
+            },
+            "worst_product": {
+                "$reduce": {
+                    "input": "$products",
+                    "initialValue": {"description": "", "net_score": 999},
+                    "in": {
+                        "$cond": [
+                            {"$lt": ["$$this.net_score", "$$value.net_score"]},
+                            "$$this",
+                            "$$value"
+                        ]
+                    }
+                }
+            },
+            "highest_iron_per_serving_product": {
+                "$reduce": {
+                    "input": "$products",
+                    "initialValue": {"description": "", "iron_per_serving": -1},
+                    "in": {
+                        "$cond": [
+                            {"$gt": ["$$this.iron_per_serving", "$$value.iron_per_serving"]},
+                            "$$this",
+                            "$$value"
+                        ]
+                    }
+                }
+            },
+            "highest_calcium_per_serving_product": {
+                "$reduce": {
+                    "input": "$products",
+                    "initialValue": {"description": "", "calcium_per_serving": -1},
+                    "in": {
+                        "$cond": [
+                            {"$gt": ["$$this.calcium_per_serving", "$$value.calcium_per_serving"]},
+                            "$$this",
+                            "$$value"
+                        ]
+                    }
+                }
+            },
+            "most_penalized_product": {
+                "$reduce": {
+                    "input": "$products",
+                    "initialValue": {"description": "", "total_penalty": -1},
+                    "in": {
+                        "$cond": [
+                            {"$gt": ["$$this.total_penalty", "$$value.total_penalty"]},
+                            "$$this",
+                            "$$value"
+                        ]
+                    }
+                }
+            }
+        }
+    },
+    {"$sort": {"avg_net_score": -1}},
+    {"$limit": 20}
+]
+
+results = list(collection.aggregate(pipeline))
+
+print(json.dumps(results, indent=2, ensure_ascii=False))
+
+client.close()
