@@ -1,7 +1,8 @@
 [
   {
     $match: {
-      ingredients: {$type: "string"}
+      ingredients: {$type: "string"},
+      description: {$type: "string"}
     }
   },
   {
@@ -580,30 +581,10 @@
               vars: {
                 totalFat: {
                   $add: [
-                    {
-                      $ifNull: [
                         "$Fatty acids, total saturated-G",
-                        0
-                      ]
-                    },
-                    {
-                      $ifNull: [
                         "$Fatty acids, total trans-G",
-                        0
-                      ]
-                    },
-                    {
-                      $ifNull: [
                         "$Fatty acids, total monounsaturated-G",
-                        0
-                      ]
-                    },
-                    {
-                      $ifNull: [
                         "$Fatty acids, total polyunsaturated-G",
-                        0
-                      ]
-                    }
                   ]
                 }
               },
@@ -810,18 +791,14 @@
             $or: [
               {
                 $regexMatch: {
-                  input: {
-                    $ifNull: ["$description", ""]
-                  },
+                  input: "$description",
                   regex: "vegetable",
                   options: "i"
                 }
               },
               {
                 $regexMatch: {
-                  input: {
-                    $ifNull: ["$description", ""]
-                  },
+                  input: "$description",
                   regex: "fruit",
                   options: "i"
                 }
@@ -923,6 +900,7 @@
   {
     $group: {
       _id: "$owner",
+      total: {$sum: 1},
       num_A: {
         $sum: {
           $cond: [{ $eq: ["$grade", "A"] }, 1, 0]
@@ -967,20 +945,51 @@
   {
     $project: {
       owner: "$owners.name",
+      total: "$total",
       num_a: "$num_A",
       num_b: "$num_B",
       num_c: "$num_C",
       num_d: "$num_D",
-      num_e: "$num_E"
+      num_e: "$num_E",
+      percent_a: {
+        $divide: [
+        "$num_A",
+        "$total"
+      ]},
+      percent_b: {
+        $divide: [
+          "$num_B",
+          "$total"
+        ]
+      },
+      percent_c: {
+        $divide: [
+          "$num_C",
+          "$total"
+        ]
+      },
+      percent_d: {
+        $divide: [
+          "$num_D",
+          "$total"
+        ]
+      },
+      percent_e: {
+        $divide: [
+          "$num_E",
+          "$total"
+        ]
+      },
     }
   },
   {
     $sort: {
-      num_a: -1,
-      num_b: -1,
-      num_c: -1,
-      num_d: -1,
-      num_e: -1
+      total: -1,
+      percent_a: -1,
+      percent_b: -1,
+      percent_c: -1,
+      percent_d: -1,
+      percent_e: -1
     }
   }
 ]

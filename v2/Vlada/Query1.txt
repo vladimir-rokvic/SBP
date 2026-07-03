@@ -1,0 +1,54 @@
+[
+  {
+    $match: {
+      ingredients: {
+        $type: "string"
+      }
+    }
+  },
+  {
+    $group: {
+      _id: "$owner._id",
+      name: {
+        $last: "$owner.name"
+      },
+      total: {
+        $sum: 1
+      },
+      has_allergen: {
+        $sum: {
+          $cond: [
+            {
+              $regexMatch: {
+                input: "$ingredients",
+                regex: "nut|milk|egg|wheat|fish",
+                options: "i"
+              }
+            },
+            1,
+            0
+          ]
+        }
+      }
+    }
+  },
+  {
+    $project: {
+      owner_name: "$name",
+      total: 1,
+      has_allergen: 1,
+      percent: {
+        $divide: ["$has_allergen", "$total"]
+      }
+    }
+  },
+  {
+    $sort: {
+      total: -1,
+      percent: -1
+    }
+  },
+  {
+    $limit: 10
+  }
+]

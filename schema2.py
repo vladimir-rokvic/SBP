@@ -244,5 +244,12 @@ if version_rows:
     for i in tqdm(range(0, len(version_rows), BATCH_SIZE), desc="Inserting versions"):
         product_version_col.insert_many(version_rows[i:i + BATCH_SIZE])
 
+
+product_version_col.create_index([("version", 1),
+                                  ("nutrient_changes.Energy-KCAL", 1)])
+product_version_col.create_index([("version", 1),
+                                  ("days_since_previous_version", 1),
+                                  ("available_modified_diff_days", 1)])
+
 print(client.list_database_names())
 print(mydb.list_collection_names())

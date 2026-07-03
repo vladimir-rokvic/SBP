@@ -1,0 +1,63 @@
+[
+  {
+    $match: {
+      version: {
+        $gte: 2
+      },
+      "nutrient_changes.Energy-KCAL": { $ne: 0 }
+    }
+  },
+  {
+    $group: {
+      _id: "$owner._id",
+      total: { $sum: 1 },
+      name: {
+        $last: "$owner.name"
+      },
+      energy_mean: {
+        $avg: "$nutrient_changes.Energy-KCAL"
+      },
+      protein_mean: {
+        $avg: "$nutrient_changes.Protein-G"
+      },
+      fiber_mean: {
+        $avg: "$nutrient_changes.Fiber, total dietary-G"
+      },
+      sugar_mean: {
+        $avg: "$nutrient_changes.Sugars, total including NLEA-G"
+      },
+      total_fat_mean: {
+        $avg: "$nutrient_changes.Total lipid (fat)-G"
+      },
+      saturated_fat_mean: {
+        $avg: "$nutrient_changes.Fatty acids, total saturated-G"
+      },
+      monounsaturated_fat_mean: {
+        $avg: "$nutrient_changes.Fatty acids, total monounsaturated-G"
+      },
+      polyunsaturated_fat_mean: {
+        $avg: "$nutrient_changes.Fatty acids, total polyunsaturated-G"
+      }
+    }
+  },
+  {
+    $project: {
+      name: 1,
+      total: 1,
+      energy_mean: 1,
+      protein_mean: 1,
+      fiber_mean: 1,
+      sugar_mean: 1,
+      total_fat_mean: 1,
+      saturated_fat_mean: 1
+    }
+  },
+  {
+    $sort: {
+      total: -1
+    }
+  },
+  {
+    $limit: 10
+  }
+]

@@ -1,24 +1,5 @@
 [
   {
-    $sort: { modified_date: 1 }
-  },
-  {
-    $group: {
-      _id: "$gtin_upc",
-      owner: { $last: "$owner" },
-      ingredients: { $last: "$ingredients" }
-    }
-  },
-  {
-    $lookup: {
-      from: "owners",
-      localField: "owner",
-      foreignField: "_id",
-      as: "owners"
-    }
-  },
-  { $unwind: "$owners" },
-  {
     $match: {
       ingredients: {
         $type: "string"
@@ -26,9 +7,24 @@
     }
   },
   {
+    $sort: {
+      modified_date: 1
+    }
+  },
+  {
+    $group: {
+      _id: "$gtin_upc",
+      owner: {
+        $last: "$owner"
+      },
+      ingredients: {
+        $last: "$ingredients"
+      }
+    }
+  },
+  {
     $group: {
       _id: "$owner",
-      name: { $last: "$owners.name" },
       total: {
         $sum: 1
       },
@@ -82,8 +78,19 @@
     }
   },
   {
+    $lookup: {
+      from: "owners",
+      localField: "_id",
+      foreignField: "_id",
+      as: "owners"
+    }
+  },
+  {
+    $unwind: "$owners"
+  },
+  {
     $project: {
-      owner_name: "$name",
+      owner_name: "$owners.name",
       total: 1,
       has_allergen: 1,
       percent: {

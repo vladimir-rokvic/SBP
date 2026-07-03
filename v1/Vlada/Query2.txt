@@ -27,18 +27,9 @@
     }
   },
   {
-    $lookup: {
-      from: "owners",
-      localField: "owner",
-      foreignField: "_id",
-      as: "owners"
-    }
-  },
-  { $unwind: "$owners" },
-  {
     $group: {
       _id: "$owner",
-      name: { $last: "$owners.name" },
+      name: { $last: "$owner" },
       vitamin_a_mean: {
         $avg: "$Vitamin A, IU-IU"
       },
@@ -104,8 +95,17 @@
     }
   },
   {
+    $lookup: {
+      from: "owners",
+      localField: "_id",
+      foreignField: "_id",
+      as: "owners"
+    }
+  },
+  { $unwind: "$owners" },
+  {
     $project: {
-      owner: "$name",
+      owner: "$owners.name",
       vitamin_a_mean: 1,
       vitamin_a_std: 1,
       vitamin_a_max: 1,
@@ -136,25 +136,10 @@
   {
     $match: {
       vitamin_a_mean: { $ne: 0 },
-      vitamin_a_std: { $ne: 0 },
-      vitamin_a_max: { $ne: 0 },
-      vitamin_a_min: { $ne: 0 },
       vitamin_b6_mean: { $ne: 0 },
-      vitamin_b6_std: { $ne: 0 },
-      vitamin_b6_max: { $ne: 0 },
-      vitamin_b6_min: { $ne: 0 },
       vitamin_b12_mean: { $ne: 0 },
-      vitamin_b12_std: { $ne: 0 },
-      vitamin_b12_max: { $ne: 0 },
-      vitamin_b12_min: { $ne: 0 },
       vitamin_c_mean: { $ne: 0 },
-      vitamin_c_std: { $ne: 0 },
-      vitamin_c_max: { $ne: 0 },
-      vitamin_c_min: { $ne: 0 },
       vitamin_d_mean: { $ne: 0 },
-      vitamin_d_std: { $ne: 0 },
-      vitamin_d_max: { $ne: 0 },
-      vitamin_d_min: { $ne: 0 }
     }
   }
 ]

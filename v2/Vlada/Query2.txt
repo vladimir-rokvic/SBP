@@ -1,0 +1,96 @@
+[
+  {
+    $group: {
+      _id: "$owner._id",
+      name: {
+        $first: "$owner.name"
+      },
+      vitamin_a_mean: {
+        $avg: "$Vitamin A, IU-IU"
+      },
+      vitamin_a_std: {
+        $stdDevPop: "$Vitamin A, IU-IU"
+      },
+      vitamin_a_max: {
+        $max: "$Vitamin A, IU-IU"
+      },
+      vitamin_a_min: {
+        $min: "$Vitamin A, IU-IU"
+      },
+      vitamin_b6_mean: {
+        $avg: "$Vitamin B-6-MG"
+      },
+      vitamin_b6_std: {
+        $stdDevPop: "$Vitamin B-6-MG"
+      },
+      vitamin_b6_max: {
+        $max: "$Vitamin B-6-MG"
+      },
+      vitamin_b6_min: {
+        $min: "$Vitamin B-6-MG"
+      },
+      vitamin_b12_mean: {
+        $avg: "$Vitamin B-12-UG"
+      },
+      vitamin_b12_std: {
+        $stdDevPop: "$Vitamin B-12-UG"
+      },
+      vitamin_b12_max: {
+        $max: "$Vitamin B-12-UG"
+      },
+      vitamin_b12_min: {
+        $min: "$Vitamin B-12-UG"
+      },
+      vitamin_c_mean: {
+        $avg: "$Vitamin C, total ascorbic acid-MG"
+      },
+      vitamin_c_std: {
+        $stdDevPop:
+          "$Vitamin C, total ascorbic acid-MG"
+      },
+      vitamin_c_max: {
+        $max: "$Vitamin C, total ascorbic acid-MG"
+      },
+      vitamin_c_min: {
+        $min: "$Vitamin C, total ascorbic acid-MG"
+      },
+      vitamin_d_mean: {
+        $avg: "$Vitamin D (D2 + D3), International Units-IU"
+      },
+      vitamin_d_std: {
+        $stdDevPop:
+          "$Vitamin D (D2 + D3), International Units-IU"
+      },
+      vitamin_d_max: {
+        $max: "$Vitamin D (D2 + D3), International Units-IU"
+      },
+      vitamin_d_min: {
+        $min: "$Vitamin D (D2 + D3), International Units-IU"
+      }
+    }
+  },
+  {
+    $sort: {
+      name: 1
+    }
+  },
+  {
+    $match: {
+      vitamin_a_mean: {
+        $ne: 0
+      },
+      vitamin_b6_mean: {
+        $ne: 0
+      },
+      vitamin_b12_mean: {
+        $ne: 0
+      },
+      vitamin_c_mean: {
+        $ne: 0
+      },
+      vitamin_d_mean: {
+        $ne: 0
+      }
+    }
+  }
+]

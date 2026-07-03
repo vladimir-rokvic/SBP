@@ -1,0 +1,90 @@
+[
+  {
+    $group: {
+      _id: "$owner._id",
+      name: { $last: "$owner.name" },
+      total: { $sum: 1 },
+      num_A: {
+        $sum: {
+          $cond: [
+            { $eq: ["$nutri_grade", "A"] },
+            1,
+            0
+          ]
+        }
+      },
+      num_B: {
+        $sum: {
+          $cond: [
+            { $eq: ["$nutri_grade", "B"] },
+            1,
+            0
+          ]
+        }
+      },
+      num_C: {
+        $sum: {
+          $cond: [
+            { $eq: ["$nutri_grade", "C"] },
+            1,
+            0
+          ]
+        }
+      },
+      num_D: {
+        $sum: {
+          $cond: [
+            { $eq: ["$nutri_grade", "D"] },
+            1,
+            0
+          ]
+        }
+      },
+      num_E: {
+        $sum: {
+          $cond: [
+            { $eq: ["$nutri_grade", "E"] },
+            1,
+            0
+          ]
+        }
+      }
+    }
+  },
+  {
+    $project: {
+      name: 1,
+      total: 1,
+      num_A: 1,
+      num_B: 1,
+      num_C: 1,
+      num_D: 1,
+      num_E: 1,
+      percent_a: {
+        $divide: ["$num_A", "$total"]
+      },
+      percent_b: {
+        $divide: ["$num_B", "$total"]
+      },
+      percent_c: {
+        $divide: ["$num_C", "$total"]
+      },
+      percent_d: {
+        $divide: ["$num_D", "$total"]
+      },
+      percent_e: {
+        $divide: ["$num_E", "$total"]
+      }
+    }
+  },
+  {
+    $sort: {
+      total: -1,
+      percent_a: -1,
+      percent_b: -1,
+      percent_c: -1,
+      percent_d: -1,
+      percent_e: -1
+    }
+  }
+]

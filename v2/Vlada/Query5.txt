@@ -1,0 +1,27 @@
+[
+  {
+    $match: {
+      version: { $gte: 2 },
+      days_since_previous_version: { $gt: 0 },
+      available_modified_diff_days: { $gt: 0 }
+    }
+  },
+  {
+    $group: {
+      _id: "$owner._id",
+      name: { $last: "$owner.name" },
+      days_since_previous_version_avg: {
+        $avg: "$days_since_previous_version"
+      },
+      available_modified_diff_days_avg: {
+        $avg: "$available_modified_diff_days"
+      }
+    }
+  },
+  {
+    $sort: {
+      days_since_previous_version_avg: 1,
+      available_modified_diff_days_avg: 1
+    }
+  }
+]

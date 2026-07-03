@@ -1,10 +1,5 @@
 [
   {
-    $match: {
-      gtin_upc: { $ne: null }
-    }
-  },
-  {
     $sort: {
       modified_date: 1
     }
@@ -12,20 +7,21 @@
   {
     $group: {
       _id: "$gtin_upc",
-      description: { $last: "$description" },
-      owner: { $last: "$owner" },
-      v_count: { $sum: 1 },
+      owner: {
+        $last: "$owner"
+      },
+      v_count: {
+        $sum: 1
+      },
       version: {
         $push: {
           energy: "$Energy-KCAL",
           protein: "$Protein-G",
           fiber: "$Fiber, total dietary-G",
-          unsaturated_fat: {
-            $add: [
-              "$Fatty acids, total monounsaturated-G",
-              "$Fatty acids, total polyunsaturated-G"
-            ]
-          },
+          monounsaturated_fat:
+            "$Fatty acids, total monounsaturated-G",
+          polyunsaturated_fat:
+            "$Fatty acids, total polyunsaturated-G",
           saturated_fat:
             "$Fatty acids, total saturated-G",
           total_fat: "$Total lipid (fat)-G",
@@ -36,7 +32,9 @@
   },
   {
     $match: {
-      v_count: { $gt: 1 }
+      v_count: {
+        $gt: 1
+      }
     }
   },
   {
@@ -44,7 +42,12 @@
       energy_changes: {
         $map: {
           input: {
-            $range: [1, { $size: "$version" }]
+            $range: [
+              1,
+              {
+                $size: "$version"
+              }
+            ]
           },
           as: "i",
           in: {
@@ -58,7 +61,9 @@
               {
                 $arrayElemAt: [
                   "$version.energy",
-                  { $subtract: ["$$i", 1] }
+                  {
+                    $subtract: ["$$i", 1]
+                  }
                 ]
               }
             ]
@@ -68,7 +73,12 @@
       protein_changes: {
         $map: {
           input: {
-            $range: [1, { $size: "$version" }]
+            $range: [
+              1,
+              {
+                $size: "$version"
+              }
+            ]
           },
           as: "i",
           in: {
@@ -82,7 +92,9 @@
               {
                 $arrayElemAt: [
                   "$version.protein",
-                  { $subtract: ["$$i", 1] }
+                  {
+                    $subtract: ["$$i", 1]
+                  }
                 ]
               }
             ]
@@ -92,7 +104,12 @@
       fiber_changes: {
         $map: {
           input: {
-            $range: [1, { $size: "$version" }]
+            $range: [
+              1,
+              {
+                $size: "$version"
+              }
+            ]
           },
           as: "i",
           in: {
@@ -106,14 +123,16 @@
               {
                 $arrayElemAt: [
                   "$version.fiber",
-                  { $subtract: ["$$i", 1] }
+                  {
+                    $subtract: ["$$i", 1]
+                  }
                 ]
               }
             ]
           }
         }
       },
-      unsaturated_fat_changes: {
+      monounsaturated_fat_changes: {
         $map: {
           input: {
             $range: [1, { $size: "$version" }]
@@ -123,13 +142,39 @@
             $subtract: [
               {
                 $arrayElemAt: [
-                  "$version.unsaturated_fat",
+                  "$version.monounsaturated_fat",
                   "$$i"
                 ]
               },
               {
                 $arrayElemAt: [
-                  "$version.unsaturated_fat",
+                  "$version.monounsaturated_fat",
+                  {
+                    $subtract: ["$$i", 1]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      },
+      polyunsaturated_fat_changes: {
+        $map: {
+          input: {
+            $range: [1, { $size: "$version" }]
+          },
+          as: "i",
+          in: {
+            $subtract: [
+              {
+                $arrayElemAt: [
+                  "$version.polyunsaturated_fat",
+                  "$$i"
+                ]
+              },
+              {
+                $arrayElemAt: [
+                  "$version.polyunsaturated_fat",
                   { $subtract: ["$$i", 1] }
                 ]
               }
@@ -140,7 +185,12 @@
       saturated_fat_changes: {
         $map: {
           input: {
-            $range: [1, { $size: "$version" }]
+            $range: [
+              1,
+              {
+                $size: "$version"
+              }
+            ]
           },
           as: "i",
           in: {
@@ -154,7 +204,9 @@
               {
                 $arrayElemAt: [
                   "$version.saturated_fat",
-                  { $subtract: ["$$i", 1] }
+                  {
+                    $subtract: ["$$i", 1]
+                  }
                 ]
               }
             ]
@@ -164,7 +216,12 @@
       total_fat_changes: {
         $map: {
           input: {
-            $range: [1, { $size: "$version" }]
+            $range: [
+              1,
+              {
+                $size: "$version"
+              }
+            ]
           },
           as: "i",
           in: {
@@ -178,7 +235,9 @@
               {
                 $arrayElemAt: [
                   "$version.total_fat",
-                  { $subtract: ["$$i", 1] }
+                  {
+                    $subtract: ["$$i", 1]
+                  }
                 ]
               }
             ]
@@ -188,7 +247,12 @@
       sugar_changes: {
         $map: {
           input: {
-            $range: [1, { $size: "$version" }]
+            $range: [
+              1,
+              {
+                $size: "$version"
+              }
+            ]
           },
           as: "i",
           in: {
@@ -202,7 +266,9 @@
               {
                 $arrayElemAt: [
                   "$version.sugar",
-                  { $subtract: ["$$i", 1] }
+                  {
+                    $subtract: ["$$i", 1]
+                  }
                 ]
               }
             ]
@@ -222,8 +288,11 @@
       fiber_changes_avg: {
         $avg: "$fiber_changes"
       },
-      unsaturated_fat_changes_avg: {
-        $avg: "$unsaturated_fat_changes"
+      monounsaturated_fat_changes_avg: {
+        $avg: "$monounsaturated_fat_changes"
+      },
+      polyunsaturated_fat_changes_avg: {
+        $avg: "$polyunsaturated_fat_changes"
       },
       saturated_fat_changes_avg: {
         $avg: "$saturated_fat_changes"
@@ -236,9 +305,13 @@
       }
     }
   },
+  {$match: {
+    energy_changes_avg: {$ne: 0}
+  }},
   {
     $group: {
       _id: "$owner",
+      total: { $sum: 1 },
       energy_changes_mean: {
         $avg: "$energy_changes_avg"
       },
@@ -248,8 +321,11 @@
       fiber_changes_mean: {
         $avg: "$fiber_changes_avg"
       },
-      unsaturated_fat_changes_mean: {
-        $avg: "$unsaturated_fat_changes_avg"
+      monounsaturated_fat_changes_mean: {
+        $avg: "$monounsaturated_fat_changes_avg"
+      },
+      polyunsaturated_fat_changes_mean: {
+        $avg: "$polyunsaturated_fat_changes_avg"
       },
       saturated_fat_changes_mean: {
         $avg: "$saturated_fat_changes_avg"
@@ -270,28 +346,27 @@
       as: "owners"
     }
   },
-  { $unwind: "$owners" },
+  {
+    $unwind: "$owners"
+  },
   {
     $project: {
       name: "$owners.name",
+      total: 1,
       energy_changes_mean: 1,
       protein_changes_mean: 1,
       fiber_changes_mean: 1,
-      unsaturated_fat_changes_mean: 1,
+      monounsaturated_fat_changes_mean: 1,
+      polyunsaturated_fat_changes_mean: 1,
       saturated_fat_changes_mean: 1,
       total_fat_changes_mean: 1,
       sugar_changes_mean: 1
     }
   },
   {
-    $match: {
-      energy_changes_mean: { $ne: 0 },
-      protein_changes_mean: { $ne: 0 },
-      fiber_changes_mean: { $ne: 0 },
-      unsaturated_fat_changes_mean: { $ne: 0 },
-      saturated_fat_changes_mean: { $ne: 0 },
-      total_fat_changes_mean: { $ne: 0 },
-      sugar_changes_mean: { $ne: 0 }
-    }
+    $sort: { total: -1 }
+  },
+  {
+    $limit: 10
   }
 ]
