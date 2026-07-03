@@ -1,0 +1,79 @@
+db.products.createIndex({
+  branded_food_category: 1,
+  "Energy-KCAL": 1,
+  "Sodium, Na-MG": 1
+})
+
+[
+  {
+    $match: {
+      branded_food_category: {
+        $exists: true,
+        $ne: null
+      },
+      "Energy-KCAL": { $exists: true, $ne: null },
+      "Sodium, Na-MG": {
+        $exists: true,
+        $ne: null
+      }
+    }
+  },
+  {
+    $group: {
+      _id: "$branded_food_category",
+      avg_sodium_per_100kcal: {
+        $avg: {
+          $cond: [
+            { $gt: ["$Energy-KCAL", 0] },
+            {
+              $multiply: [
+                {
+                  $divide: [
+                    "$Sodium, Na-MG",
+                    "$Energy-KCAL"
+                  ]
+                },
+                100
+              ]
+            },
+            null
+          ]
+        }
+      },
+      avg_serving_size: { $avg: "$serving_size" },
+      avg_sodium_abs: { $avg: "$Sodium, Na-MG" }
+    }
+  },
+  {
+    $project: {
+      _id: 0,
+      category: "$_id",
+      avg_sodium_per_100kcal: {
+        $round: ["$avg_sodium_per_100kcal", 2]
+      },
+      avg_serving_size: {
+        $round: ["$avg_serving_size", 2]
+      },
+      avg_sodium_abs: {
+        $round: ["$avg_sodium_abs", 2]
+      },
+      exceeds_daily_value: {
+        $gt: [
+          {
+            $multiply: [
+              "$avg_sodium_abs",
+              {
+                $divide: [
+                  "$avg_serving_size",
+                  100
+                ]
+              }
+            ]
+          },
+          2300
+        ]
+      }
+    }
+  },
+  { $sort: { avg_sodium_per_100kcal: -1 } }
+]

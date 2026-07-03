@@ -1,0 +1,122 @@
+[
+  {
+    $sort: { modified_date: 1 }
+  },
+  {
+    $group: {
+      _id: "$gtin_upc",
+      branded_food_category: {
+        $last: "$branded_food_category"
+      },
+      "Fatty acids, total saturated-G": {
+        $last: "$Fatty acids, total saturated-G"
+      },
+      "Fatty acids, total monounsaturated-G": {
+        $last:
+          "$Fatty acids, total monounsaturated-G"
+      },
+      "Fatty acids, total polyunsaturated-G": {
+        $last:
+          "$Fatty acids, total polyunsaturated-G"
+      }
+    }
+  },
+  {
+    $group: {
+      _id: "$branded_food_category",
+      avg_saturated: {
+        $avg: {
+          $toDouble:
+            "$Fatty acids, total saturated-G"
+        }
+      },
+      avg_mono: {
+        $avg: {
+          $toDouble:
+            "$Fatty acids, total monounsaturated-G"
+        }
+      },
+      avg_poly: {
+        $avg: {
+          $toDouble:
+            "$Fatty acids, total polyunsaturated-G"
+        }
+      }
+    }
+  },
+  {
+    $project: {
+      category: "$_id",
+      sat_unsat_ratio: {
+        $cond: [
+          {
+            $gt: [
+              {
+                $add: ["$avg_mono", "$avg_poly"]
+              },
+              0
+            ]
+          },
+          {
+            $divide: [
+              "$avg_saturated",
+              { $add: ["$avg_mono", "$avg_poly"] }
+            ]
+          },
+          null
+        ]
+      }
+    }
+  },
+  {
+    $match: { sat_unsat_ratio: { $ne: null } }
+  },
+  {
+    $project: {
+      category: 1,
+      sat_unsat_ratio: 1,
+      group: {
+        $switch: {
+          branches: [
+            {
+              case: {
+                $lt: ["$sat_unsat_ratio", 0.5]
+              },
+              then: "povoljno"
+            },
+            {
+              case: {
+                $and: [
+                  {
+                    $gte: [
+                      "$sat_unsat_ratio",
+                      0.5
+                    ]
+                  },
+                  {
+                    $lte: [
+                      "$sat_unsat_ratio",
+                      1.0
+                    ]
+                  }
+                ]
+              },
+              then: "neutralno"
+            }
+          ],
+          default: "nepovoljno"
+        }
+      }
+    }
+  },
+  {
+    $group: {
+      _id: "$group",
+      count: { $sum: 1 },
+      categories: { $push: "$category" }
+    }
+  },
+  {
+    $sort: { count: -1 }
+  }
+]

@@ -1,0 +1,162 @@
+[
+  {
+    $sort: { modified_date: 1 }
+  },
+  {
+    $group: {
+      _id: "$gtin_upc",
+      branded_food_category: {
+        $last: "$branded_food_category"
+      },
+      "Energy-KCAL": { $last: "$Energy-KCAL" },
+      "Iron, Fe-MG": { $last: "$Iron, Fe-MG" },
+      "Calcium, Ca-MG": {
+        $last: "$Calcium, Ca-MG"
+      },
+      "Potassium, K-MG": {
+        $last: "$Potassium, K-MG"
+      },
+      "Vitamin C, total ascorbic acid-MG": {
+        $last:
+          "$Vitamin C, total ascorbic acid-MG"
+      },
+      "Fiber, total dietary-G": {
+        $last: "$Fiber, total dietary-G"
+      }
+    }
+  },
+  {
+    $facet: {
+      maximumi: [
+        {
+          $group: {
+            _id: null,
+            max_iron: {
+              $max: { $toDouble: "$Iron, Fe-MG" }
+            },
+            max_calcium: {
+              $max: {
+                $toDouble: "$Calcium, Ca-MG"
+              }
+            },
+            max_potassium: {
+              $max: {
+                $toDouble: "$Potassium, K-MG"
+              }
+            },
+            max_vitaminC: {
+              $max: {
+                $toDouble:
+                  "$Vitamin C, total ascorbic acid-MG"
+              }
+            },
+            max_fiber: {
+              $max: {
+                $toDouble:
+                  "$Fiber, total dietary-G"
+              }
+            }
+          }
+        }
+      ],
+      skorovi: [
+        {
+          $project: {
+            branded_food_category: 1,
+            energy: { $toDouble: "$Energy-KCAL" },
+            iron: { $toDouble: "$Iron, Fe-MG" },
+            calcium: {
+              $toDouble: "$Calcium, Ca-MG"
+            },
+            potassium: {
+              $toDouble: "$Potassium, K-MG"
+            },
+            vitaminC: {
+              $toDouble:
+                "$Vitamin C, total ascorbic acid-MG"
+            },
+            fiber: {
+              $toDouble: "$Fiber, total dietary-G"
+            }
+          }
+        },
+        {
+          $match: { energy: { $gt: 0 } }
+        },
+        {
+          $project: {
+            branded_food_category: 1,
+            energy: 1,
+            norm_iron: {
+              $divide: [
+                { $divide: ["$iron", "$energy"] },
+                18.0
+              ]
+            },
+            norm_calcium: {
+              $divide: [
+                {
+                  $divide: ["$calcium", "$energy"]
+                },
+                30.0
+              ]
+            },
+            norm_potassium: {
+              $divide: [
+                {
+                  $divide: [
+                    "$potassium",
+                    "$energy"
+                  ]
+                },
+                70.0
+              ]
+            },
+            norm_vitaminC: {
+              $divide: [
+                {
+                  $divide: [
+                    "$vitaminC",
+                    "$energy"
+                  ]
+                },
+                10.0
+              ]
+            },
+            norm_fiber: {
+              $divide: [
+                {
+                  $divide: ["$fiber", "$energy"]
+                },
+                2.5
+              ]
+            }
+          }
+        },
+        {
+          $group: {
+            _id: "$branded_food_category",
+            avg_energy: { $avg: "$energy" },
+            avg_score: {
+              $avg: {
+                $add: [
+                  "$norm_iron",
+                  "$norm_calcium",
+                  "$norm_potassium",
+                  "$norm_vitaminC",
+                  "$norm_fiber"
+                ]
+              }
+            }
+          }
+        },
+        {
+          $sort: { avg_score: -1 }
+        },
+        {
+          $limit: 20
+        }
+      ]
+    }
+  }
+]

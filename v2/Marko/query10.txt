@@ -1,0 +1,50 @@
+[
+  {
+    $match: {
+      branded_food_category: { $exists: true, $ne: null },
+      "Energy-KCAL": { $gt: 0 }
+    }
+  },
+  {
+    $project: {
+      branded_food_category: 1,
+      energy: "$Energy-KCAL",
+      norm_iron: { $divide: [{ $divide: ["$Iron, Fe-MG", "$Energy-KCAL"] }, 18.0] },
+      norm_calcium: { $divide: [{ $divide: ["$Calcium, Ca-MG", "$Energy-KCAL"] }, 30.0] },
+      norm_potassium: { $divide: [{ $divide: ["$Potassium, K-MG", "$Energy-KCAL"] }, 70.0] },
+      norm_vitaminC: { $divide: [{ $divide: ["$Vitamin C, total ascorbic acid-MG", "$Energy-KCAL"] }, 10.0] },
+      norm_fiber: { $divide: [{ $divide: ["$Fiber, total dietary-G", "$Energy-KCAL"] }, 2.5] }
+    }
+  },
+  {
+    $group: {
+      _id: "$branded_food_category",
+      avg_energy: { $avg: "$energy" },
+      avg_score: {
+        $avg: {
+          $add: ["$norm_iron", "$norm_calcium", "$norm_potassium", "$norm_vitaminC", "$norm_fiber"]
+        }
+      }
+    }
+  },
+  {
+    $project: {
+      _id: 0,
+      category: "$_id",
+      avg_energy: { $round: ["$avg_energy", 2] },
+      avg_score: { $round: ["$avg_score", 4] }
+    }
+  },
+  {
+    $facet: {
+      top_20: [
+        { $sort: { avg_score: -1 } },
+        { $limit: 20 }
+      ],
+      bottom_20: [
+        { $sort: { avg_score: 1 } },
+        { $limit: 20 }
+      ]
+    }
+  }
+]
