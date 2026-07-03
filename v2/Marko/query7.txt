@@ -1,0 +1,81 @@
+db.products.createIndex({
+  branded_food_category: 1,
+  "Fiber, total dietary-G": 1
+})
+
+[
+  {
+    $match: {
+      branded_food_category: {
+        $exists: true,
+        $ne: null
+      },
+      "Fiber, total dietary-G": {
+        $exists: true,
+        $ne: null
+      }
+    }
+  },
+  {
+    $addFields: {
+      fiber_share: {
+        $cond: [
+          {
+            $gt: [
+              "$Carbohydrate, by difference-G",
+              0
+            ]
+          },
+          {
+            $divide: [
+              "$Fiber, total dietary-G",
+              "$Carbohydrate, by difference-G"
+            ]
+          },
+          0
+        ]
+      }
+    }
+  },
+  {
+    $group: {
+      _id: "$branded_food_category",
+      avg_fiber: {
+        $avg: "$Fiber, total dietary-G"
+      },
+      max_fiber_product: {
+        $top: {
+          sortBy: {
+            "Fiber, total dietary-G": -1
+          },
+          output: {
+            description: "$description",
+            fiber: "$Fiber, total dietary-G"
+          }
+        }
+      },
+      max_fiber_share_product: {
+        $top: {
+          sortBy: { fiber_share: -1 },
+          output: {
+            description: "$description",
+            fiber_share: "$fiber_share"
+          }
+        }
+      }
+    }
+  },
+  {
+    $project: {
+      _id: 0,
+      category: "$_id",
+      avg_fiber: { $round: ["$avg_fiber", 3] },
+      low_fiber_flag: {
+        $lt: ["$avg_fiber", 0.5]
+      },
+      max_fiber_product: 1,
+      max_fiber_share_product: 1
+    }
+  },
+  { $sort: { avg_fiber: -1 } }
+]

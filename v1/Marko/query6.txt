@@ -1,0 +1,57 @@
+[
+  {
+    $sort: { modified_date: 1 }
+  },
+  {
+    $group: {
+      _id: "$gtin_upc",
+      branded_food_category: {
+        $last: "$branded_food_category"
+      },
+      "Protein-G": { $last: "$Protein-G" },
+      "Total lipid (fat)-G": {
+        $last: "$Total lipid (fat)-G"
+      }
+    }
+  },
+  {
+    $group: {
+      _id: "$branded_food_category",
+      avg_protein: {
+        $avg: { $toDouble: "$Protein-G" }
+      },
+      avg_fat: {
+        $avg: {
+          $toDouble: "$Total lipid (fat)-G"
+        }
+      }
+    }
+  },
+  {
+    $project: {
+      category: "$_id",
+      avg_protein: 1,
+      avg_fat: 1,
+      protein_fat_ratio: {
+        $cond: [
+          { $gt: ["$avg_fat", 0] },
+          {
+            $divide: ["$avg_protein", "$avg_fat"]
+          },
+          null
+        ]
+      }
+    }
+  },
+  {
+    $match: {
+      protein_fat_ratio: { $ne: null }
+    }
+  },
+  {
+    $sort: { protein_fat_ratio: -1 }
+  },
+  {
+    $limit: 15
+  }
+]

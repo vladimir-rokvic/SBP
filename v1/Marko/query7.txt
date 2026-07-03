@@ -1,0 +1,122 @@
+[
+  {
+    $sort: { modified_date: 1 }
+  },
+  {
+    $group: {
+      _id: "$gtin_upc",
+      branded_food_category: {
+        $last: "$branded_food_category"
+      },
+      description: { $last: "$description" },
+      "Fiber, total dietary-G": {
+        $last: "$Fiber, total dietary-G"
+      },
+      "Carbohydrate, by difference-G": {
+        $last: "$Carbohydrate, by difference-G"
+      }
+    }
+  },
+  {
+    $group: {
+      _id: "$branded_food_category",
+      avg_fiber: {
+        $avg: {
+          $toDouble: "$Fiber, total dietary-G"
+        }
+      },
+      products: {
+        $push: {
+          description: "$description",
+          fiber: {
+            $toDouble: "$Fiber, total dietary-G"
+          },
+          carbs: {
+            $toDouble:
+              "$Carbohydrate, by difference-G"
+          }
+        }
+      }
+    }
+  },
+  {
+    $project: {
+      category: "$_id",
+      avg_fiber: 1,
+      low_fiber_flag: {
+        $cond: [
+          { $lt: ["$avg_fiber", 0.5] },
+          true,
+          false
+        ]
+      },
+      max_fiber_product: {
+        $reduce: {
+          input: "$products",
+          initialValue: {
+            description: "",
+            fiber: -1
+          },
+          in: {
+            $cond: [
+              {
+                $gt: [
+                  "$$this.fiber",
+                  "$$value.fiber"
+                ]
+              },
+              "$$this",
+              "$$value"
+            ]
+          }
+        }
+      },
+      max_fiber_share_product: {
+        $reduce: {
+          input: "$products",
+          initialValue: {
+            description: "",
+            fiber_share: -1
+          },
+          in: {
+            $let: {
+              vars: {
+                share: {
+                  $cond: [
+                    { $gt: ["$$this.carbs", 0] },
+                    {
+                      $divide: [
+                        "$$this.fiber",
+                        "$$this.carbs"
+                      ]
+                    },
+                    0
+                  ]
+                }
+              },
+              in: {
+                $cond: [
+                  {
+                    $gt: [
+                      "$$share",
+                      "$$value.fiber_share"
+                    ]
+                  },
+                  {
+                    description:
+                      "$$this.description",
+                    fiber_share: "$$share"
+                  },
+                  "$$value"
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    $sort: { avg_fiber: -1 }
+  }
+]
