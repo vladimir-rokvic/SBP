@@ -1,0 +1,139 @@
+[
+  {
+    $match: {
+      modified_date: { $ne: null },
+      available_date: { $ne: null },
+      modified_date: { $ne: NaN },
+      available_date: { $ne: NaN }
+    }
+  },
+  { $sort: { modified_date: 1 } },
+  {
+    $group: {
+      _id: "$gtin_upc",
+      owner: { $last: "$owner" },
+      v_count: { $sum: 1 },
+      version: {
+        $push: {
+          modified_date: {
+            $toDate: "$modified_date"
+          },
+          available_date: {
+            $toDate: "$available_date"
+          }
+        }
+      }
+    }
+  },
+  {
+    $match: { v_count: { $gt: 1 } }
+  },
+  {
+    $addFields: {
+      time_modified_difference: {
+        $map: {
+          input: {
+            $range: [1, { $size: "$version" }]
+          },
+          as: "i",
+          in: {
+            $subtract: [
+              {
+                $arrayElemAt: [
+                  "$version.modified_date",
+                  "$$i"
+                ]
+              },
+              {
+                $arrayElemAt: [
+                  "$version.modified_date",
+                  { $subtract: ["$$i", 1] }
+                ]
+              }
+            ]
+          }
+        }
+      },
+      time_difference: {
+        $map: {
+          input: {
+            $range: [0, { $size: "$version" }]
+          },
+          as: "i",
+          in: {
+            $subtract: [
+              {
+                $arrayElemAt: [
+                  "$version.available_date",
+                  "$$i"
+                ]
+              },
+              {
+                $arrayElemAt: [
+                  "$version.modified_date",
+                  "$$i"
+                ]
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    $addFields: {
+      avg_time_difference: {
+        $avg: "$time_difference"
+      },
+      avg_time_modified_difference: {
+        $avg: "$time_modified_difference"
+      }
+    }
+  },
+  {
+    $group: {
+      _id: "$owner",
+      time_difference_mean: {
+        $avg: "$avg_time_difference"
+      },
+      time_modified_difference_mean: {
+        $avg: "$avg_time_modified_difference"
+      }
+    }
+  },
+  {
+    $lookup: {
+      from: "owners",
+      localField: "_id",
+      foreignField: "_id",
+      as: "owners"
+    }
+  },
+  { $unwind: "$owners" },
+  {
+    $project: {
+      name: "$owners.name",
+      time_difference_per_day: {
+        $divide: [
+          "$time_difference_mean",
+          86400000
+        ]
+      },
+      time_modified_per_day: {
+        $divide: [
+          "$time_modified_difference_mean",
+          86400000
+        ]
+      }
+    }
+  },
+  {
+    $sort: {
+      time_difference_per_day: 1,
+      time_modified_per_day: 1
+    }
+  },
+  {
+    $limit: 10
+  }
+]

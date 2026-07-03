@@ -1,0 +1,297 @@
+[
+  {
+    $match: {
+      gtin_upc: { $ne: null }
+    }
+  },
+  {
+    $sort: {
+      modified_date: 1
+    }
+  },
+  {
+    $group: {
+      _id: "$gtin_upc",
+      description: { $last: "$description" },
+      owner: { $last: "$owner" },
+      v_count: { $sum: 1 },
+      version: {
+        $push: {
+          energy: "$Energy-KCAL",
+          protein: "$Protein-G",
+          fiber: "$Fiber, total dietary-G",
+          unsaturated_fat: {
+            $add: [
+              "$Fatty acids, total monounsaturated-G",
+              "$Fatty acids, total polyunsaturated-G"
+            ]
+          },
+          saturated_fat:
+            "$Fatty acids, total saturated-G",
+          total_fat: "$Total lipid (fat)-G",
+          sugar: "$Sugars, total including NLEA-G"
+        }
+      }
+    }
+  },
+  {
+    $match: {
+      v_count: { $gt: 1 }
+    }
+  },
+  {
+    $addFields: {
+      energy_changes: {
+        $map: {
+          input: {
+            $range: [1, { $size: "$version" }]
+          },
+          as: "i",
+          in: {
+            $subtract: [
+              {
+                $arrayElemAt: [
+                  "$version.energy",
+                  "$$i"
+                ]
+              },
+              {
+                $arrayElemAt: [
+                  "$version.energy",
+                  { $subtract: ["$$i", 1] }
+                ]
+              }
+            ]
+          }
+        }
+      },
+      protein_changes: {
+        $map: {
+          input: {
+            $range: [1, { $size: "$version" }]
+          },
+          as: "i",
+          in: {
+            $subtract: [
+              {
+                $arrayElemAt: [
+                  "$version.protein",
+                  "$$i"
+                ]
+              },
+              {
+                $arrayElemAt: [
+                  "$version.protein",
+                  { $subtract: ["$$i", 1] }
+                ]
+              }
+            ]
+          }
+        }
+      },
+      fiber_changes: {
+        $map: {
+          input: {
+            $range: [1, { $size: "$version" }]
+          },
+          as: "i",
+          in: {
+            $subtract: [
+              {
+                $arrayElemAt: [
+                  "$version.fiber",
+                  "$$i"
+                ]
+              },
+              {
+                $arrayElemAt: [
+                  "$version.fiber",
+                  { $subtract: ["$$i", 1] }
+                ]
+              }
+            ]
+          }
+        }
+      },
+      unsaturated_fat_changes: {
+        $map: {
+          input: {
+            $range: [1, { $size: "$version" }]
+          },
+          as: "i",
+          in: {
+            $subtract: [
+              {
+                $arrayElemAt: [
+                  "$version.unsaturated_fat",
+                  "$$i"
+                ]
+              },
+              {
+                $arrayElemAt: [
+                  "$version.unsaturated_fat",
+                  { $subtract: ["$$i", 1] }
+                ]
+              }
+            ]
+          }
+        }
+      },
+      saturated_fat_changes: {
+        $map: {
+          input: {
+            $range: [1, { $size: "$version" }]
+          },
+          as: "i",
+          in: {
+            $subtract: [
+              {
+                $arrayElemAt: [
+                  "$version.saturated_fat",
+                  "$$i"
+                ]
+              },
+              {
+                $arrayElemAt: [
+                  "$version.saturated_fat",
+                  { $subtract: ["$$i", 1] }
+                ]
+              }
+            ]
+          }
+        }
+      },
+      total_fat_changes: {
+        $map: {
+          input: {
+            $range: [1, { $size: "$version" }]
+          },
+          as: "i",
+          in: {
+            $subtract: [
+              {
+                $arrayElemAt: [
+                  "$version.total_fat",
+                  "$$i"
+                ]
+              },
+              {
+                $arrayElemAt: [
+                  "$version.total_fat",
+                  { $subtract: ["$$i", 1] }
+                ]
+              }
+            ]
+          }
+        }
+      },
+      sugar_changes: {
+        $map: {
+          input: {
+            $range: [1, { $size: "$version" }]
+          },
+          as: "i",
+          in: {
+            $subtract: [
+              {
+                $arrayElemAt: [
+                  "$version.sugar",
+                  "$$i"
+                ]
+              },
+              {
+                $arrayElemAt: [
+                  "$version.sugar",
+                  { $subtract: ["$$i", 1] }
+                ]
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    $addFields: {
+      energy_changes_avg: {
+        $avg: "$energy_changes"
+      },
+      protein_changes_avg: {
+        $avg: "$protein_changes"
+      },
+      fiber_changes_avg: {
+        $avg: "$fiber_changes"
+      },
+      unsaturated_fat_changes_avg: {
+        $avg: "$unsaturated_fat_changes"
+      },
+      saturated_fat_changes_avg: {
+        $avg: "$saturated_fat_changes"
+      },
+      total_fat_changes_avg: {
+        $avg: "$total_fat_changes"
+      },
+      sugar_changes_avg: {
+        $avg: "$sugar_changes"
+      }
+    }
+  },
+  {
+    $group: {
+      _id: "$owner",
+      energy_changes_mean: {
+        $avg: "$energy_changes_avg"
+      },
+      protein_changes_mean: {
+        $avg: "$protein_changes_avg"
+      },
+      fiber_changes_mean: {
+        $avg: "$fiber_changes_avg"
+      },
+      unsaturated_fat_changes_mean: {
+        $avg: "$unsaturated_fat_changes_avg"
+      },
+      saturated_fat_changes_mean: {
+        $avg: "$saturated_fat_changes_avg"
+      },
+      total_fat_changes_mean: {
+        $avg: "$total_fat_changes_avg"
+      },
+      sugar_changes_mean: {
+        $avg: "$sugar_changes_avg"
+      }
+    }
+  },
+  {
+    $lookup: {
+      from: "owners",
+      localField: "_id",
+      foreignField: "_id",
+      as: "owners"
+    }
+  },
+  { $unwind: "$owners" },
+  {
+    $project: {
+      name: "$owners.name",
+      energy_changes_mean: 1,
+      protein_changes_mean: 1,
+      fiber_changes_mean: 1,
+      unsaturated_fat_changes_mean: 1,
+      saturated_fat_changes_mean: 1,
+      total_fat_changes_mean: 1,
+      sugar_changes_mean: 1
+    }
+  },
+  {
+    $match: {
+      energy_changes_mean: { $ne: 0 },
+      protein_changes_mean: { $ne: 0 },
+      fiber_changes_mean: { $ne: 0 },
+      unsaturated_fat_changes_mean: { $ne: 0 },
+      saturated_fat_changes_mean: { $ne: 0 },
+      total_fat_changes_mean: { $ne: 0 },
+      sugar_changes_mean: { $ne: 0 }
+    }
+  }
+]

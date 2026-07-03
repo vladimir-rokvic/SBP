@@ -1,0 +1,103 @@
+[
+  {
+    $sort: { modified_date: 1 }
+  },
+  {
+    $group: {
+      _id: "$gtin_upc",
+      owner: { $last: "$owner" },
+      ingredients: { $last: "$ingredients" }
+    }
+  },
+  {
+    $lookup: {
+      from: "owners",
+      localField: "owner",
+      foreignField: "_id",
+      as: "owners"
+    }
+  },
+  { $unwind: "$owners" },
+  {
+    $match: {
+      ingredients: {
+        $type: "string"
+      }
+    }
+  },
+  {
+    $group: {
+      _id: "$owner",
+      name: { $last: "$owners.name" },
+      total: {
+        $sum: 1
+      },
+      has_allergen: {
+        $sum: {
+          $cond: [
+            {
+              $or: [
+                {
+                  $regexMatch: {
+                    input: "$ingredients",
+                    regex: "nut",
+                    options: "i"
+                  }
+                },
+                {
+                  $regexMatch: {
+                    input: "$ingredients",
+                    regex: "milk",
+                    options: "i"
+                  }
+                },
+                {
+                  $regexMatch: {
+                    input: "$ingredients",
+                    regex: "egg",
+                    options: "i"
+                  }
+                },
+                {
+                  $regexMatch: {
+                    input: "$ingredients",
+                    regex: "wheat",
+                    options: "i"
+                  }
+                },
+                {
+                  $regexMatch: {
+                    input: "$ingredients",
+                    regex: "fish",
+                    options: "i"
+                  }
+                }
+              ]
+            },
+            1,
+            0
+          ]
+        }
+      }
+    }
+  },
+  {
+    $project: {
+      owner_name: "$name",
+      total: 1,
+      has_allergen: 1,
+      percent: {
+        $divide: ["$has_allergen", "$total"]
+      }
+    }
+  },
+  {
+    $sort: {
+      total: -1,
+      percent: -1
+    }
+  },
+  {
+    $limit: 10
+  }
+]

@@ -4,3 +4,4 @@ include
 lib*
 pyvenv.cfg
 .python-version
+*.csv

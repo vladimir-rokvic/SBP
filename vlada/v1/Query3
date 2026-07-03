@@ -1,0 +1,986 @@
+[
+  {
+    $match: {
+      ingredients: {$type: "string"}
+    }
+  },
+  {
+    $sort: { modified_date: 1 }
+  },
+  {
+    $group: {
+      _id: "$gtin_upc",
+      serving_size_unit: {
+        $last: "$serving_size_unit"
+      },
+      "Energy-KCAL": { $last: "$Energy-KCAL" },
+      "Sugars, total including NLEA-G": {
+        $last: "$Sugars, total including NLEA-G"
+      },
+      "Sodium, Na-MG": {
+        $last: "$Sodium, Na-MG"
+      },
+      "Fatty acids, total saturated-G": {
+        $last: "$Fatty acids, total saturated-G"
+      },
+      "Fatty acids, total monounsaturated-G": {
+        $last:
+          "$Fatty acids, total monounsaturated-G"
+      },
+      "Fatty acids, total polyunsaturated-G": {
+        $last:
+          "$Fatty acids, total polyunsaturated-G"
+      },
+      "Fatty acids, total trans-G": {
+        $last: "$Fatty acids, total trans-G"
+      },
+      "Fiber, total dietary-G": {
+        $last: "$Fiber, total dietary-G"
+      },
+      "Protein-G": { $last: "$Protein-G" },
+      description: { $last: "$description" },
+      owner: { $last: "$owner" },
+      ingredients: { $last: "$ingredients" }
+    }
+  },
+  {
+    $addFields: {
+      energy_points: {
+        $cond: {
+          if: {
+            $eq: ["$serving_size_unit", "g"]
+          },
+
+          then: {
+            $switch: {
+              branches: [
+                {
+                  case: {
+                    $lte: ["$Energy-KCAL", 80]
+                  },
+                  then: 0
+                },
+                {
+                  case: {
+                    $lte: ["$Energy-KCAL", 160]
+                  },
+                  then: 1
+                },
+                {
+                  case: {
+                    $lte: ["$Energy-KCAL", 240]
+                  },
+                  then: 2
+                },
+                {
+                  case: {
+                    $lte: ["$Energy-KCAL", 320]
+                  },
+                  then: 3
+                },
+                {
+                  case: {
+                    $lte: ["$Energy-KCAL", 400]
+                  },
+                  then: 4
+                },
+                {
+                  case: {
+                    $lte: ["$Energy-KCAL", 480]
+                  },
+                  then: 5
+                },
+                {
+                  case: {
+                    $lte: ["$Energy-KCAL", 560]
+                  },
+                  then: 6
+                },
+                {
+                  case: {
+                    $lte: ["$Energy-KCAL", 640]
+                  },
+                  then: 7
+                },
+                {
+                  case: {
+                    $lte: ["$Energy-KCAL", 720]
+                  },
+                  then: 8
+                },
+                {
+                  case: {
+                    $lte: ["$Energy-KCAL", 800]
+                  },
+                  then: 9
+                }
+              ],
+              default: 10
+            }
+          },
+
+          else: {
+            $switch: {
+              branches: [
+                {
+                  case: {
+                    $lte: ["$Energy-KCAL", 7.2]
+                  },
+                  then: 0
+                },
+                {
+                  case: {
+                    $lte: ["$Energy-KCAL", 14.3]
+                  },
+                  then: 1
+                },
+                {
+                  case: {
+                    $lte: ["$Energy-KCAL", 21.5]
+                  },
+                  then: 2
+                },
+                {
+                  case: {
+                    $lte: ["$Energy-KCAL", 28.5]
+                  },
+                  then: 3
+                },
+                {
+                  case: {
+                    $lte: ["$Energy-KCAL", 35.9]
+                  },
+                  then: 4
+                },
+                {
+                  case: {
+                    $lte: ["$Energy-KCAL", 43.0]
+                  },
+                  then: 5
+                },
+                {
+                  case: {
+                    $lte: ["$Energy-KCAL", 50.2]
+                  },
+                  then: 6
+                },
+                {
+                  case: {
+                    $lte: ["$Energy-KCAL", 57.4]
+                  },
+                  then: 7
+                },
+                {
+                  case: {
+                    $lte: ["$Energy-KCAL", 64.5]
+                  },
+                  then: 8
+                },
+                {
+                  case: {
+                    $lte: ["$Energy-KCAL", 71.7]
+                  },
+                  then: 9
+                }
+              ],
+              default: 10
+            }
+          }
+        }
+      },
+
+      sugar_points: {
+        $cond: {
+          if: {
+            $eq: ["$serving_size_unit", "g"]
+          },
+
+          then: {
+            $switch: {
+              branches: [
+                {
+                  case: {
+                    $lte: [
+                      "$Sugars, total including NLEA-G",
+                      4.5
+                    ]
+                  },
+                  then: 0
+                },
+                {
+                  case: {
+                    $lte: [
+                      "$Sugars, total including NLEA-G",
+                      9.0
+                    ]
+                  },
+                  then: 1
+                },
+                {
+                  case: {
+                    $lte: [
+                      "$Sugars, total including NLEA-G",
+                      13.5
+                    ]
+                  },
+                  then: 2
+                },
+                {
+                  case: {
+                    $lte: [
+                      "$Sugars, total including NLEA-G",
+                      18.0
+                    ]
+                  },
+                  then: 3
+                },
+                {
+                  case: {
+                    $lte: [
+                      "$Sugars, total including NLEA-G",
+                      22.5
+                    ]
+                  },
+                  then: 4
+                },
+                {
+                  case: {
+                    $lte: [
+                      "$Sugars, total including NLEA-G",
+                      27.0
+                    ]
+                  },
+                  then: 5
+                },
+                {
+                  case: {
+                    $lte: [
+                      "$Sugars, total including NLEA-G",
+                      31.0
+                    ]
+                  },
+                  then: 6
+                },
+                {
+                  case: {
+                    $lte: [
+                      "$Sugars, total including NLEA-G",
+                      36.0
+                    ]
+                  },
+                  then: 7
+                },
+                {
+                  case: {
+                    $lte: [
+                      "$Sugars, total including NLEA-G",
+                      40.0
+                    ]
+                  },
+                  then: 8
+                },
+                {
+                  case: {
+                    $lte: [
+                      "$Sugars, total including NLEA-G",
+                      45.0
+                    ]
+                  },
+                  then: 9
+                }
+              ],
+              default: 10
+            }
+          },
+
+          else: {
+            $switch: {
+              branches: [
+                {
+                  case: {
+                    $lte: [
+                      "$Sugars, total including NLEA-G",
+                      0
+                    ]
+                  },
+                  then: 0
+                },
+                {
+                  case: {
+                    $lte: [
+                      "$Sugars, total including NLEA-G",
+                      1.5
+                    ]
+                  },
+                  then: 1
+                },
+                {
+                  case: {
+                    $lte: [
+                      "$Sugars, total including NLEA-G",
+                      3.0
+                    ]
+                  },
+                  then: 2
+                },
+                {
+                  case: {
+                    $lte: [
+                      "$Sugars, total including NLEA-G",
+                      4.5
+                    ]
+                  },
+                  then: 3
+                },
+                {
+                  case: {
+                    $lte: [
+                      "$Sugars, total including NLEA-G",
+                      6.0
+                    ]
+                  },
+                  then: 4
+                },
+                {
+                  case: {
+                    $lte: [
+                      "$Sugars, total including NLEA-G",
+                      7.5
+                    ]
+                  },
+                  then: 5
+                },
+                {
+                  case: {
+                    $lte: [
+                      "$Sugars, total including NLEA-G",
+                      9.0
+                    ]
+                  },
+                  then: 6
+                },
+                {
+                  case: {
+                    $lte: [
+                      "$Sugars, total including NLEA-G",
+                      10.5
+                    ]
+                  },
+                  then: 7
+                },
+                {
+                  case: {
+                    $lte: [
+                      "$Sugars, total including NLEA-G",
+                      12.5
+                    ]
+                  },
+                  then: 8
+                },
+                {
+                  case: {
+                    $lte: [
+                      "$Sugars, total including NLEA-G",
+                      13.5
+                    ]
+                  },
+                  then: 9
+                }
+              ],
+              default: 10
+            }
+          }
+        }
+      },
+
+      salt_points: {
+        $cond: {
+          if: {
+            $eq: ["$serving_size_unit", "g"]
+          },
+
+          then: {
+            $switch: {
+              branches: [
+                {
+                  case: {
+                    $lte: ["$Sodium, Na-MG", 90]
+                  },
+                  then: 0
+                },
+                {
+                  case: {
+                    $lte: ["$Sodium, Na-MG", 180]
+                  },
+                  then: 1
+                },
+                {
+                  case: {
+                    $lte: ["$Sodium, Na-MG", 270]
+                  },
+                  then: 2
+                },
+                {
+                  case: {
+                    $lte: ["$Sodium, Na-MG", 360]
+                  },
+                  then: 3
+                },
+                {
+                  case: {
+                    $lte: ["$Sodium, Na-MG", 450]
+                  },
+                  then: 4
+                },
+                {
+                  case: {
+                    $lte: ["$Sodium, Na-MG", 540]
+                  },
+                  then: 5
+                },
+                {
+                  case: {
+                    $lte: ["$Sodium, Na-MG", 630]
+                  },
+                  then: 6
+                },
+                {
+                  case: {
+                    $lte: ["$Sodium, Na-MG", 720]
+                  },
+                  then: 7
+                },
+                {
+                  case: {
+                    $lte: ["$Sodium, Na-MG", 810]
+                  },
+                  then: 8
+                },
+                {
+                  case: {
+                    $lte: ["$Sodium, Na-MG", 900]
+                  },
+                  then: 9
+                }
+              ],
+              default: 10
+            }
+          },
+
+          else: 0
+        }
+      },
+
+      fat_points: {
+        $cond: {
+          if: {
+            $eq: ["$serving_size_unit", "g"]
+          },
+
+          then: {
+            $switch: {
+              branches: [
+                {
+                  case: {
+                    $lte: [
+                      "$Fatty acids, total saturated-G",
+                      1
+                    ]
+                  },
+                  then: 0
+                },
+                {
+                  case: {
+                    $lte: [
+                      "$Fatty acids, total saturated-G",
+                      2
+                    ]
+                  },
+                  then: 1
+                },
+                {
+                  case: {
+                    $lte: [
+                      "$Fatty acids, total saturated-G",
+                      3
+                    ]
+                  },
+                  then: 2
+                },
+                {
+                  case: {
+                    $lte: [
+                      "$Fatty acids, total saturated-G",
+                      4
+                    ]
+                  },
+                  then: 3
+                },
+                {
+                  case: {
+                    $lte: [
+                      "$Fatty acids, total saturated-G",
+                      5
+                    ]
+                  },
+                  then: 4
+                },
+                {
+                  case: {
+                    $lte: [
+                      "$Fatty acids, total saturated-G",
+                      6
+                    ]
+                  },
+                  then: 5
+                },
+                {
+                  case: {
+                    $lte: [
+                      "$Fatty acids, total saturated-G",
+                      7
+                    ]
+                  },
+                  then: 6
+                },
+                {
+                  case: {
+                    $lte: [
+                      "$Fatty acids, total saturated-G",
+                      8
+                    ]
+                  },
+                  then: 7
+                },
+                {
+                  case: {
+                    $lte: [
+                      "$Fatty acids, total saturated-G",
+                      9
+                    ]
+                  },
+                  then: 8
+                },
+                {
+                  case: {
+                    $lte: [
+                      "$Fatty acids, total saturated-G",
+                      10
+                    ]
+                  },
+                  then: 9
+                }
+              ],
+              default: 10
+            }
+          },
+
+          else: {
+            $let: {
+              vars: {
+                totalFat: {
+                  $add: [
+                    {
+                      $ifNull: [
+                        "$Fatty acids, total saturated-G",
+                        0
+                      ]
+                    },
+                    {
+                      $ifNull: [
+                        "$Fatty acids, total trans-G",
+                        0
+                      ]
+                    },
+                    {
+                      $ifNull: [
+                        "$Fatty acids, total monounsaturated-G",
+                        0
+                      ]
+                    },
+                    {
+                      $ifNull: [
+                        "$Fatty acids, total polyunsaturated-G",
+                        0
+                      ]
+                    }
+                  ]
+                }
+              },
+              in: {
+                $let: {
+                  vars: {
+                    ratio: {
+                      $cond: {
+                        if: {
+                          $eq: ["$$totalFat", 0]
+                        },
+                        then: 0,
+                        else: {
+                          $divide: [
+                            "$Fatty acids, total saturated-G",
+                            "$$totalFat"
+                          ]
+                        }
+                      }
+                    }
+                  },
+                  in: {
+                    $switch: {
+                      branches: [
+                        {
+                          case: {
+                            $lte: ["$$ratio", 0.1]
+                          },
+                          then: 0
+                        },
+                        {
+                          case: {
+                            $lte: [
+                              "$$ratio",
+                              0.16
+                            ]
+                          },
+                          then: 1
+                        },
+                        {
+                          case: {
+                            $lte: [
+                              "$$ratio",
+                              0.22
+                            ]
+                          },
+                          then: 2
+                        },
+                        {
+                          case: {
+                            $lte: [
+                              "$$ratio",
+                              0.28
+                            ]
+                          },
+                          then: 3
+                        },
+                        {
+                          case: {
+                            $lte: [
+                              "$$ratio",
+                              0.34
+                            ]
+                          },
+                          then: 4
+                        },
+                        {
+                          case: {
+                            $lte: ["$$ratio", 0.4]
+                          },
+                          then: 5
+                        },
+                        {
+                          case: {
+                            $lte: [
+                              "$$ratio",
+                              0.46
+                            ]
+                          },
+                          then: 6
+                        },
+                        {
+                          case: {
+                            $lte: [
+                              "$$ratio",
+                              0.52
+                            ]
+                          },
+                          then: 7
+                        },
+                        {
+                          case: {
+                            $lte: [
+                              "$$ratio",
+                              0.58
+                            ]
+                          },
+                          then: 8
+                        },
+                        {
+                          case: {
+                            $lte: [
+                              "$$ratio",
+                              0.64
+                            ]
+                          },
+                          then: 9
+                        }
+                      ],
+                      default: 10
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+
+      fiber_points: {
+        $switch: {
+          branches: [
+            {
+              case: {
+                $lte: [
+                  "$Fiber, total dietary-G",
+                  0.7
+                ]
+              },
+              then: 0
+            },
+            {
+              case: {
+                $lte: [
+                  "$Fiber, total dietary-G",
+                  1.4
+                ]
+              },
+              then: 1
+            },
+            {
+              case: {
+                $lte: [
+                  "$Fiber, total dietary-G",
+                  2.1
+                ]
+              },
+              then: 2
+            },
+            {
+              case: {
+                $lte: [
+                  "$Fiber, total dietary-G",
+                  2.8
+                ]
+              },
+              then: 3
+            },
+            {
+              case: {
+                $lte: [
+                  "$Fiber, total dietary-G",
+                  3.5
+                ]
+              },
+              then: 4
+            }
+          ],
+          default: 5
+        }
+      },
+
+      protein_points: {
+        $switch: {
+          branches: [
+            {
+              case: { $lte: ["$Protein-G", 1.6] },
+              then: 0
+            },
+            {
+              case: { $lte: ["$Protein-G", 3.2] },
+              then: 1
+            },
+            {
+              case: { $lte: ["$Protein-G", 4.8] },
+              then: 2
+            },
+            {
+              case: { $lte: ["$Protein-G", 6.4] },
+              then: 3
+            },
+            {
+              case: { $lte: ["$Protein-G", 8.0] },
+              then: 4
+            }
+          ],
+          default: 5
+        }
+      },
+
+      fruit_veggie_points: {
+        $cond: [
+          {
+            $or: [
+              {
+                $regexMatch: {
+                  input: {
+                    $ifNull: ["$description", ""]
+                  },
+                  regex: "vegetable",
+                  options: "i"
+                }
+              },
+              {
+                $regexMatch: {
+                  input: {
+                    $ifNull: ["$description", ""]
+                  },
+                  regex: "fruit",
+                  options: "i"
+                }
+              },
+              {
+                $regexMatch: {
+                  input: "$ingredients",
+                  regex: "carrot",
+                  options: "i"
+                }
+              },
+              {
+                $regexMatch: {
+                  input: "$ingredients",
+                  regex: "tomato",
+                  options: "i"
+                }
+              },
+              {
+                $regexMatch: {
+                  input: "$ingredients",
+                  regex: "cucumber",
+                  options: "i"
+                }
+              },
+              {
+                $regexMatch: {
+                  input: "$ingredients",
+                  regex: "berry",
+                  options: "i"
+                }
+              }
+            ]
+          },
+          5,
+          0
+        ]
+      }
+    }
+  },
+  {
+    $addFields: {
+      positive_points: {
+        $add: [
+          "$fruit_veggie_points",
+          "$fiber_points",
+          "$protein_points"
+        ]
+      },
+      negative_points: {
+        $add: [
+          "$fat_points",
+          "$salt_points",
+          "$sugar_points",
+          "$energy_points"
+        ]
+      }
+    }
+  },
+  {
+    $addFields: {
+      grade: {
+        $let: {
+          vars: {
+            final: {
+              $subtract: [
+                "$negative_points",
+                "$positive_points"
+              ]
+            }
+          },
+          in: {
+            $switch: {
+              branches: [
+                {
+                  case: { $lte: ["$$final", -1] },
+                  then: "A"
+                },
+                {
+                  case: { $lte: ["$$final", 2] },
+                  then: "B"
+                },
+                {
+                  case: { $lte: ["$$final", 10] },
+                  then: "C"
+                },
+                {
+                  case: { $lte: ["$$final", 18] },
+                  then: "D"
+                }
+              ],
+              default: "E"
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    $group: {
+      _id: "$owner",
+      num_A: {
+        $sum: {
+          $cond: [{ $eq: ["$grade", "A"] }, 1, 0]
+        }
+      },
+      num_B: {
+        $sum: {
+          $cond: [{ $eq: ["$grade", "B"] }, 1, 0]
+        }
+      },
+      num_C: {
+        $sum: {
+          $cond: [{ $eq: ["$grade", "C"] }, 1, 0]
+        }
+      },
+      num_D: {
+        $sum: {
+          $cond: [{ $eq: ["$grade", "D"] }, 1, 0]
+        }
+      },
+      num_E: {
+        $sum: {
+          $cond: [{ $eq: ["$grade", "E"] }, 1, 0]
+        }
+      }
+    }
+  },
+  {
+    $lookup: {
+      from: "owners",
+      localField: "_id",
+      foreignField: "_id",
+      as: "owners"
+    }
+  },
+  {
+    $unwind: {
+      path: "$owners",
+      preserveNullAndEmptyArrays: false
+    }
+  },
+  {
+    $project: {
+      owner: "$owners.name",
+      num_a: "$num_A",
+      num_b: "$num_B",
+      num_c: "$num_C",
+      num_d: "$num_D",
+      num_e: "$num_E"
+    }
+  },
+  {
+    $sort: {
+      num_a: -1,
+      num_b: -1,
+      num_c: -1,
+      num_d: -1,
+      num_e: -1
+    }
+  }
+]
